@@ -9,6 +9,7 @@ import { AuthService } from '@/src/services/authService';
 import DesktopSidebar from './DesktopSidebar';
 import MobileHeader from './MobileHeader';
 import MobileBottomNav from './MobileBottomNav';
+import IncomingRequestsSidebar from './IncomingRequestsSidebar';
 
 export default function SidebarLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuthStore();
@@ -48,7 +49,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col md:pl-64 min-h-screen">
+      <div className="flex-1 flex flex-col md:pl-64 xl:pr-80 min-h-screen">
         {/* Mobile Header */}
         <MobileHeader handleLogout={handleLogout} />
 
@@ -60,6 +61,9 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
 
       {/* Mobile Bottom Navigation */}
       <MobileBottomNav isLinkActive={isLinkActive} />
+
+      {/* Desktop Right Sidebar (Incoming Requests) */}
+      <IncomingRequestsSidebar />
     </div>
   );
 }

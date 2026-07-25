@@ -1,38 +1,41 @@
 'use client';
 
+import { useState } from 'react';
 import { useAuthStore } from '@/src/store/authStore';
 import SidebarLayout from '@/src/components/SidebarLayout';
 import { useMatchmaking } from '@/src/hooks/useMatchmaking';
 
 export default function HomeTemplate() {
   const { token } = useAuthStore();
-  const { 
-    matchStatus, joinQueue, handleStop, handleNext, 
-    localVideoRef, remoteVideoRef, mediaError 
+  const {
+    matchStatus, joinQueue, handleStop, handleNext,
+    localVideoRef, remoteVideoRef, mediaError
   } = useMatchmaking(token || undefined);
+
+  const [showOnExplore, setShowOnExplore] = useState(true);
 
   return (
     <SidebarLayout>
       <div className="flex flex-col h-full min-h-[calc(100vh-6rem)] max-w-6xl mx-auto p-4 space-y-4">
-        
+
         {/* Main Video Area */}
         <div className="relative flex-1 bg-zinc-950 rounded-3xl overflow-hidden border border-white/5 shadow-2xl">
-          
+
           {/* Remote Video (Full Size) */}
-          <video 
-            ref={remoteVideoRef} 
-            autoPlay 
-            playsInline 
+          <video
+            ref={remoteVideoRef}
+            autoPlay
+            playsInline
             className="absolute inset-0 w-full h-full object-cover"
           />
 
           {/* Local Video (PIP) */}
           <div className="absolute bottom-6 right-6 w-48 sm:w-64 aspect-video bg-zinc-900 rounded-2xl overflow-hidden border-2 border-white/10 shadow-2xl z-30">
-            <video 
-              ref={localVideoRef} 
-              autoPlay 
-              playsInline 
-              muted 
+            <video
+              ref={localVideoRef}
+              autoPlay
+              playsInline
+              muted
               className="w-full h-full object-cover transform -scale-x-100" // Mirror local video
             />
           </div>
@@ -54,7 +57,7 @@ export default function HomeTemplate() {
               </div>
             </div>
           )}
-          
+
           {matchStatus === 'searching' && (
             <div className="absolute inset-0 flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm z-20">
               <div className="text-center">
@@ -70,32 +73,48 @@ export default function HomeTemplate() {
         </div>
 
         {/* Control Bar */}
-        <div className="flex items-center justify-center gap-4 bg-zinc-900/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md shrink-0">
+        <div className="flex items-center justify-center gap-6 bg-zinc-900/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md shrink-0">
           {matchStatus === 'idle' ? (
-            <button 
-              onClick={joinQueue}
-              className="px-10 py-5 bg-emerald-500 hover:bg-emerald-600 text-white text-lg font-bold rounded-2xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] active:scale-95"
-            >
-              Start Matching
-            </button>
+            <>
+              {/* Settings Toggle */}
+              <div className="hidden sm:flex items-center gap-3 px-4 py-2 bg-zinc-800/50 rounded-2xl border border-white/5">
+                <div className="flex flex-col">
+                  <span className="text-white text-sm font-semibold">Show on Explore</span>
+                  <span className="text-zinc-500 text-xs">Let others find you</span>
+                </div>
+                <button
+                  onClick={() => setShowOnExplore(!showOnExplore)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${showOnExplore ? 'bg-emerald-500' : 'bg-zinc-600'}`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showOnExplore ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+              </div>
+
+              <button
+                onClick={joinQueue}
+                className="px-10 py-5 bg-emerald-500 hover:bg-emerald-600 text-white text-lg font-bold rounded-2xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] active:scale-95"
+              >
+                Start Matching
+              </button>
+            </>
           ) : (
             <>
-              <button 
+              <button
                 onClick={handleStop}
-                className="px-8 py-4 bg-zinc-800 hover:bg-rose-500/90 text-white font-bold rounded-2xl transition-all border border-white/5 hover:border-transparent active:scale-95 min-w-[120px]"
+                className="px-8 py-4 bg-zinc-800 hover:bg-rose-500/90 text-white font-bold rounded-2xl transition-all border border-white/5 hover:border-transparent active:scale-95 min-w-30"
               >
                 Stop
               </button>
-              <button 
+              <button
                 onClick={handleNext}
-                className="px-10 py-4 bg-white hover:bg-zinc-200 text-zinc-950 text-lg font-bold rounded-2xl transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)] active:scale-95 min-w-[140px]"
+                className="px-10 py-4 bg-white hover:bg-zinc-200 text-zinc-950 text-lg font-bold rounded-2xl transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)] active:scale-95 min-w-35"
               >
                 Next ➔
               </button>
             </>
           )}
         </div>
-        
+
       </div>
     </SidebarLayout>
   );
