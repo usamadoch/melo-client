@@ -10,8 +10,11 @@ import DesktopSidebar from './DesktopSidebar';
 import MobileHeader from './MobileHeader';
 import MobileBottomNav from './MobileBottomNav';
 import IncomingRequestsSidebar from './IncomingRequestsSidebar';
+import { useChatRequestsSocket } from '../hooks/useChatRequestsSocket';
 
 export default function SidebarLayout({ children }: { children: React.ReactNode }) {
+  // Initialize global chat request socket listeners
+  useChatRequestsSocket();
   const { user, logout } = useAuthStore();
   const pathname = usePathname();
 

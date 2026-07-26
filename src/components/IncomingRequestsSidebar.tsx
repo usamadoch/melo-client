@@ -4,7 +4,8 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 
 import type { Availability } from '../types/requests';
-import { MOCK_REQUESTS } from '../constants/mockData';
+import { useRequestsStore } from '../store/requestsStore';
+import { useChatRequestsSocket } from '../hooks/useChatRequestsSocket';
 
 const getRingColor = (availability: Availability) => {
   switch (availability) {
@@ -20,11 +21,11 @@ const getRingColor = (availability: Availability) => {
 };
 
 export default function IncomingRequestsSidebar() {
-  const router = useRouter();
+  const incomingRequests = useRequestsStore(state => state.incomingRequests);
+  const { acceptChatRequest } = useChatRequestsSocket();
 
-  const handleAccept = (conversationId: string) => {
-    // Navigate to the main matching call view for this specific conversation
-    router.push(`/chat/${conversationId}`);
+  const handleAccept = (requesterUserId: string) => {
+    acceptChatRequest(requesterUserId);
   };
 
   return (
@@ -33,19 +34,19 @@ export default function IncomingRequestsSidebar() {
         <h2 className="text-lg font-bold text-white flex items-center justify-between">
           <span>Incoming Requests</span>
           <span className="bg-indigo-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-            {MOCK_REQUESTS.length}
+            {incomingRequests.length}
           </span>
         </h2>
         <p className="text-zinc-500 text-xs mt-1">People who want to talk to you</p>
       </div>
 
       <div className="p-4 space-y-4">
-        {MOCK_REQUESTS.map((req) => (
+        {incomingRequests.map((req) => (
           <div key={req.id} className="bg-zinc-800/40 border border-white/5 rounded-2xl p-4 hover:bg-zinc-800/60 transition-colors">
             <div className="flex items-start gap-3">
               <div className="relative shrink-0 mt-1">
                 <img 
-                  src={req.avatarUrl} 
+                  src={req.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(req.name)}`} 
                   alt={req.name} 
                   className={`w-12 h-12 rounded-full object-cover ring-2 ring-offset-2 ring-offset-zinc-900 ${getRingColor(req.availability)}`}
                 />
@@ -72,7 +73,7 @@ export default function IncomingRequestsSidebar() {
           </div>
         ))}
         
-        {MOCK_REQUESTS.length === 0 && (
+        {incomingRequests.length === 0 && (
           <div className="text-center text-zinc-500 text-sm py-8">
             No incoming requests.
           </div>
