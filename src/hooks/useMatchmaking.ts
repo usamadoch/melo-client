@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import { useWebRTC } from './useWebRTC';
 import { useMatchingSocket } from './useMatchingSocket';
 
@@ -10,6 +10,27 @@ export function useMatchmaking(token: string | undefined) {
 
 
 
+  const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
+  const pendingOfferRef = useRef<{offer: RTCSessionDescriptionInit, from: string} | null>(null);
+
+  const drainPendingCandidates = async (pc: RTCPeerConnection) => {
+    const pending = pendingCandidatesRef.current;
+    pendingCandidatesRef.current = [];
+    for (const candidate of pending) {
+      try {
+        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch (e) {
+        console.warn('Failed to add queued ICE candidate', e);
+      }
+    }
+  };
+
+  // Use a ref to keep track of the latest webrtc object without triggering effect loops
+  const webrtcRef = useRef(webrtc);
+  useEffect(() => {
+    webrtcRef.current = webrtc;
+  }, [webrtc]);
+
   useEffect(() => {
     if (!socket) return;
 
@@ -19,24 +40,36 @@ export function useMatchmaking(token: string | undefined) {
 
       try {
         // This will reuse the already initialized stream, or try again if it failed on mount
-        const stream = await webrtc.initializeMedia();
+        const stream = await webrtcRef.current.initializeMedia();
 
-        const pc = webrtc.createPeerConnection(
+        const pc = webrtcRef.current.createPeerConnection(
           (candidate) => {
             socket.emit('webrtc_ice_candidate', { candidate, to: remoteUserId });
           },
           () => { }, // remote stream is handled in useWebRTC and attached to ref
           () => {
             // Disconnected
-            webrtc.cleanupConnection();
+            webrtcRef.current.cleanupConnection();
           }
         );
 
-        webrtc.addLocalTracks(pc, stream);
+        webrtcRef.current.addLocalTracks(pc, stream);
 
         if (initiator) {
-          const offer = await webrtc.createOffer(pc);
+          const offer = await webrtcRef.current.createOffer(pc);
           socket.emit('webrtc_offer', { offer, to: remoteUserId });
+        } else {
+          if (pendingOfferRef.current) {
+            const { offer, from } = pendingOfferRef.current;
+            pendingOfferRef.current = null;
+            try {
+              const answer = await webrtcRef.current.handleReceiveOffer(pc, offer);
+              await drainPendingCandidates(pc);
+              socket.emit('webrtc_answer', { answer, to: from });
+            } catch (err) {
+              console.error('Error processing queued offer:', err);
+            }
+          }
         }
       } catch (error) {
         console.error('Failed to setup match:', error);
@@ -45,23 +78,36 @@ export function useMatchmaking(token: string | undefined) {
     };
 
     const handleOffer = async ({ offer, from }: { offer: RTCSessionDescriptionInit, from: string }) => {
-      if (!webrtc.peerConnectionRef.current) return;
-      const answer = await webrtc.handleReceiveOffer(webrtc.peerConnectionRef.current, offer);
+      if (!webrtcRef.current.peerConnectionRef.current) {
+        pendingOfferRef.current = { offer, from };
+        return;
+      }
+      const answer = await webrtcRef.current.handleReceiveOffer(webrtcRef.current.peerConnectionRef.current, offer);
+      await drainPendingCandidates(webrtcRef.current.peerConnectionRef.current);
       socket.emit('webrtc_answer', { answer, to: from });
     };
 
     const handleAnswer = async ({ answer }: { answer: RTCSessionDescriptionInit }) => {
-      if (!webrtc.peerConnectionRef.current) return;
-      await webrtc.handleReceiveAnswer(webrtc.peerConnectionRef.current, answer);
+      if (!webrtcRef.current.peerConnectionRef.current) return;
+      await webrtcRef.current.handleReceiveAnswer(webrtcRef.current.peerConnectionRef.current, answer);
+      await drainPendingCandidates(webrtcRef.current.peerConnectionRef.current);
     };
 
     const handleIceCandidate = async ({ candidate }: { candidate: RTCIceCandidateInit }) => {
-      if (!webrtc.peerConnectionRef.current) return;
-      await webrtc.handleReceiveIceCandidate(webrtc.peerConnectionRef.current, candidate);
+      const pc = webrtcRef.current.peerConnectionRef.current;
+      if (!pc || !pc.remoteDescription) {
+        pendingCandidatesRef.current.push(candidate);
+        return;
+      }
+      try {
+        await webrtcRef.current.handleReceiveIceCandidate(pc, candidate);
+      } catch (e) {
+        console.warn('Failed to add ICE candidate', e);
+      }
     };
 
     const handlePeerDisconnected = () => {
-      webrtc.cleanupConnection();
+      webrtcRef.current.cleanupConnection();
       setMatchStatus('idle');
       setRemotePeerId(null);
     };
@@ -79,7 +125,7 @@ export function useMatchmaking(token: string | undefined) {
       socket.off('webrtc_ice_candidate', handleIceCandidate);
       socket.off('peer_disconnected', handlePeerDisconnected);
     };
-  }, [socket, webrtc, setMatchStatus, setRemotePeerId]);
+  }, [socket, setMatchStatus, setRemotePeerId]); // Remove webrtc from dependencies
 
   const handleStart = useCallback(async () => {
     try {

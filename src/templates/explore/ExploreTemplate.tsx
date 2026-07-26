@@ -1,17 +1,35 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import SidebarLayout from '@/src/components/SidebarLayout';
 import ExploreUserCard from '@/src/components/ExploreUserCard';
-import { CATEGORIES, MOCK_USERS } from '@/src/constants/mockData';
+import { ProfileService, type ExploreDataResponse } from '@/src/services/profileService';
 
 export default function ExploreTemplate() {
   const [activeCategory, setActiveCategory] = useState('All');
+  const [exploreData, setExploreData] = useState<ExploreDataResponse>({ users: [], categories: [] });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const data = await ProfileService.getExploreProfiles();
+        setExploreData(data);
+      } catch (err) {
+        console.error('Failed to load explore data', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
+  }, []);
 
   const filteredUsers = activeCategory === 'All'
-    ? MOCK_USERS
-    : MOCK_USERS.filter(user => user.category === activeCategory);
+    ? exploreData.users
+    : exploreData.users.filter(user => user.interests.includes(activeCategory));
+
+  const allCategories = ['All', ...exploreData.categories];
 
   return (
     <SidebarLayout>
@@ -19,7 +37,7 @@ export default function ExploreTemplate() {
 
         {/* Categories Bar */}
         <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide shrink-0">
-          {CATEGORIES.map(category => (
+          {allCategories.map(category => (
             <button
               key={category}
               onClick={() => setActiveCategory(category)}
@@ -35,17 +53,33 @@ export default function ExploreTemplate() {
 
         {/* Instagram-style Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-0.5 rounded-2xl overflow-hidden bg-black/20 border border-white/5">
-          {filteredUsers.map(user => (
-            <ExploreUserCard
-              key={user.id}
-              name={user.name}
-              bio={user.bio}
-              category={user.category}
-              gradientClass={user.gradientClass}
-            />
-          ))}
+          {isLoading ? (
+            <div className="col-span-full py-20 text-center text-zinc-500">
+              Loading explore...
+            </div>
+          ) : filteredUsers.map((user, idx) => {
+            const gradients = [
+              'bg-linear-to-br from-blue-500 to-cyan-500',
+              'bg-linear-to-br from-purple-500 to-indigo-500',
+              'bg-linear-to-br from-orange-500 to-rose-500',
+              'bg-linear-to-br from-emerald-400 to-teal-500',
+            ];
+            const gradientClass = gradients[idx % gradients.length];
+            
+            return (
+              <ExploreUserCard
+                key={user.id}
+                id={user.id}
+                name={user.name}
+                bio={user.bio || 'No bio'}
+                conversationTitle={user.conversationTitle}
+                category={user.interests[0] || 'New'}
+                gradientClass={gradientClass}
+              />
+            );
+          })}
 
-          {filteredUsers.length === 0 && (
+          {!isLoading && filteredUsers.length === 0 && (
             <div className="col-span-full py-20 text-center text-zinc-500">
               No users found in this category.
             </div>

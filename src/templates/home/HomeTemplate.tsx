@@ -4,15 +4,31 @@ import { useState } from 'react';
 import { useAuthStore } from '@/src/store/authStore';
 import SidebarLayout from '@/src/components/SidebarLayout';
 import { useMatchmaking } from '@/src/hooks/useMatchmaking';
+import { ProfileService } from '@/src/services/profileService';
 
 export default function HomeTemplate() {
-  const { token } = useAuthStore();
+  const { token, profile, setProfile } = useAuthStore();
   const {
     matchStatus, joinQueue, handleStop, handleNext,
     localVideoRef, remoteVideoRef, mediaError
   } = useMatchmaking(token || undefined);
 
-  const [showOnExplore, setShowOnExplore] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const showOnExplore = profile?.showOnExplore ?? true;
+
+  const handleToggleExplore = async () => {
+    if (isUpdating || !profile) return;
+    setIsUpdating(true);
+    const newValue = !showOnExplore;
+    try {
+      await ProfileService.updateProfile({ showOnExplore: newValue });
+      setProfile({ ...profile, showOnExplore: newValue });
+    } catch (err) {
+      console.error('Failed to update explore setting', err);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   return (
     <SidebarLayout>
@@ -83,8 +99,9 @@ export default function HomeTemplate() {
                   <span className="text-zinc-500 text-xs">Let others find you</span>
                 </div>
                 <button
-                  onClick={() => setShowOnExplore(!showOnExplore)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${showOnExplore ? 'bg-emerald-500' : 'bg-zinc-600'}`}
+                  onClick={handleToggleExplore}
+                  disabled={isUpdating}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${showOnExplore ? 'bg-emerald-500' : 'bg-zinc-600'} ${isUpdating ? 'opacity-50' : ''}`}
                 >
                   <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showOnExplore ? 'translate-x-6' : 'translate-x-1'}`} />
                 </button>

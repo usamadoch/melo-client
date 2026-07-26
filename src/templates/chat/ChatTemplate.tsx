@@ -1,25 +1,52 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { io, Socket } from 'socket.io-client';
 import SidebarLayout from '@/src/components/SidebarLayout';
 import { useAuthStore } from '@/src/store/authStore';
-import { useMatchmaking } from '@/src/hooks/useMatchmaking';
-import { MOCK_CHAT_CONTEXT } from '@/src/constants/mockData';
+import { useWebRTC } from '@/src/hooks/useWebRTC';
+import { ProfileService } from '@/src/services/profileService';
+import { useDirectCallSocket } from '@/src/hooks/useDirectCallSocket';
 
 export default function ChatTemplate({ conversationId }: { conversationId: string }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { token } = useAuthStore();
+  
+  const remoteUserId = searchParams.get('remoteUserId');
+  const initiator = searchParams.get('initiator') === 'true';
 
-  // Reusing the matchmaking hook to quickly acquire local/remote media stream references
-  // for the UI layout. In a real environment, a dedicated useCall hook would manage the connection.
-  const { localVideoRef, remoteVideoRef } = useMatchmaking(token || undefined);
+  const webrtc = useWebRTC();
+  const [remoteUser, setRemoteUser] = useState<{name: string, bio: string, interests: string[]} | null>(null);
 
-  const handleEndMatch = () => {
-    // End the match and return to explore
-    router.push('/explore');
-  };
+  useEffect(() => {
+    if (!token || !remoteUserId) return;
 
-  const { discussionTitle, discussionTopics } = MOCK_CHAT_CONTEXT;
+    const fetchRemoteProfile = async () => {
+      try {
+        const data = await ProfileService.getPublicProfile(remoteUserId);
+        if (data) {
+          setRemoteUser(data);
+        } else {
+          setRemoteUser({ name: 'Unknown User', bio: '', interests: [] });
+        }
+      } catch (err) {
+        setRemoteUser({ name: 'Unknown User', bio: '', interests: [] });
+      }
+    };
+    fetchRemoteProfile();
+  }, [token, remoteUserId]);
+
+  const { endCall } = useDirectCallSocket({
+    token,
+    remoteUserId,
+    initiator,
+    conversationId,
+    webrtc
+  });
+
+
 
   return (
     <SidebarLayout>
@@ -28,9 +55,10 @@ export default function ChatTemplate({ conversationId }: { conversationId: strin
         {/* Discussion Header */}
         <div className="bg-zinc-900/60 border border-white/10 rounded-2xl p-5 backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold text-white mb-2">{discussionTitle}</h1>
+            <h1 className="text-xl font-bold text-white mb-2">{remoteUser ? remoteUser.name : 'Connecting...'}</h1>
+            {remoteUser?.bio && <p className="text-zinc-400 text-sm mb-2">{remoteUser.bio}</p>}
             <div className="flex flex-wrap gap-2">
-              {discussionTopics.map(topic => (
+              {remoteUser?.interests.map(topic => (
                 <span key={topic} className="px-2 py-1 bg-black/40 text-zinc-300 text-xs font-semibold rounded-md border border-white/5 shadow-sm">
                   #{topic}
                 </span>
@@ -48,7 +76,7 @@ export default function ChatTemplate({ conversationId }: { conversationId: strin
 
           {/* Remote Video (Full Size) */}
           <video
-            ref={remoteVideoRef}
+            ref={webrtc.remoteVideoRef}
             autoPlay
             playsInline
             className="absolute inset-0 w-full h-full object-cover"
@@ -57,7 +85,7 @@ export default function ChatTemplate({ conversationId }: { conversationId: strin
           {/* Local Video (PIP) */}
           <div className="absolute bottom-6 right-6 w-48 sm:w-64 aspect-video bg-zinc-900 rounded-2xl overflow-hidden border-2 border-white/10 shadow-2xl z-30">
             <video
-              ref={localVideoRef}
+              ref={webrtc.localVideoRef}
               autoPlay
               playsInline
               muted
@@ -69,7 +97,7 @@ export default function ChatTemplate({ conversationId }: { conversationId: strin
         {/* Control Bar */}
         <div className="flex items-center justify-center gap-6 bg-zinc-900/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md shrink-0">
           <button
-            onClick={handleEndMatch}
+            onClick={endCall}
             className="px-10 py-4 bg-rose-600 hover:bg-rose-500 text-white text-lg font-bold rounded-2xl transition-all shadow-[0_0_20px_rgba(225,29,72,0.3)] hover:shadow-[0_0_30px_rgba(225,29,72,0.5)] active:scale-95"
           >
             End Match
