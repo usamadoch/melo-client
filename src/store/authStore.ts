@@ -16,6 +16,7 @@ export interface Profile {
   conversationTitle?: string;
   interests: string[];
   showOnExplore: boolean;
+  exploreThumbnail?: string;
   allowRandomMatching: boolean;
 }
 

@@ -75,6 +75,8 @@ export default function ExploreTemplate() {
                 conversationTitle={user.conversationTitle}
                 category={user.interests[0] || 'New'}
                 gradientClass={gradientClass}
+                exploreThumbnail={user.exploreThumbnail}
+                avatar={user.avatar}
               />
             );
           })}

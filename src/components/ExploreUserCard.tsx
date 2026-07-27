@@ -11,9 +11,11 @@ interface ExploreUserCardProps {
   conversationTitle?: string;
   category: string;
   gradientClass: string;
+  exploreThumbnail?: string;
+  avatar?: string;
 }
 
-export default function ExploreUserCard({ id, name, bio, conversationTitle, category, gradientClass }: ExploreUserCardProps) {
+export default function ExploreUserCard({ id, name, bio, conversationTitle, category, gradientClass, exploreThumbnail, avatar }: ExploreUserCardProps) {
   const { sendChatRequest } = useChatRequestsSocket();
   const outgoingRequests = useRequestsStore(state => state.outgoingRequests);
   const isSent = outgoingRequests.includes(id);
@@ -27,6 +29,14 @@ export default function ExploreUserCard({ id, name, bio, conversationTitle, cate
 
   return (
     <div className={`relative w-full aspect-9/16 group cursor-pointer overflow-hidden ${gradientClass} ${isSent ? 'ring-2 ring-emerald-500 ring-inset' : ''}`}>
+      {/* Background Image (Thumbnail or Avatar) */}
+      {(exploreThumbnail || avatar) && (
+        <img 
+          src={exploreThumbnail || avatar} 
+          alt={name} 
+          className="absolute inset-0 w-full h-full object-cover" 
+        />
+      )}
 
       {/* Background Gradient overlay for text readability at bottom */}
       <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent opacity-80" />

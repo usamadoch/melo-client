@@ -8,7 +8,13 @@ export function useMatchmaking(token: string | undefined) {
   const { socket, setMatchStatus, setRemotePeerId, remotePeerId } = socketHook;
   const [mediaError, setMediaError] = useState<string | null>(null);
 
-
+  // Initialize local media immediately on mount
+  const { initializeMedia } = webrtc;
+  useEffect(() => {
+    initializeMedia().catch(() => {
+      setMediaError('Could not access camera. Please check your camera permissions.');
+    });
+  }, [initializeMedia]);
 
   const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
   const pendingOfferRef = useRef<{offer: RTCSessionDescriptionInit, from: string} | null>(null);
@@ -109,7 +115,10 @@ export function useMatchmaking(token: string | undefined) {
     const handlePeerDisconnected = () => {
       webrtcRef.current.cleanupConnection();
       setMatchStatus('idle');
-      setRemotePeerId(null);
+      setRemotePeerId((prev) => {
+        if (prev) socketHook.setPreviousPeerId(prev);
+        return null;
+      });
     };
 
     socket.on('match_found', handleMatchFound);

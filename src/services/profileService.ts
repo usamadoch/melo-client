@@ -22,6 +22,7 @@ export interface ExploreDataResponse {
     bio?: string;
     conversationTitle?: string;
     interests: string[];
+    exploreThumbnail?: string;
   }>;
   categories: string[];
 }
@@ -55,5 +56,18 @@ export class ProfileService {
   static async getPublicProfile(userId: string): Promise<{name: string, bio: string, interests: string[]}> {
     const response = await api.get<{name: string, bio: string, interests: string[]}>(`/profile/${userId}/public`);
     return response.data;
+  }
+
+  static async getUploadUrl(fileType: string): Promise<{ uploadUrl: string; publicUrl: string }> {
+    const response = await api.get<{ uploadUrl: string; publicUrl: string }>(`/profile/upload-url?fileType=${encodeURIComponent(fileType)}`);
+    return response.data;
+  }
+
+  static async uploadImageToS3(uploadUrl: string, blob: Blob): Promise<void> {
+    await fetch(uploadUrl, {
+      method: 'PUT',
+      body: blob,
+      headers: { 'Content-Type': blob.type || 'image/jpeg' }
+    });
   }
 }

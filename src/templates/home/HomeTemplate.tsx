@@ -5,13 +5,18 @@ import { useAuthStore } from '@/src/store/authStore';
 import SidebarLayout from '@/src/components/SidebarLayout';
 import { useMatchmaking } from '@/src/hooks/useMatchmaking';
 import { ProfileService } from '@/src/services/profileService';
+import ReportModal from '@/src/components/ReportModal';
+import { captureVideoFrame } from '@/src/utils/mediaUtils';
 
 export default function HomeTemplate() {
   const { token, profile, setProfile } = useAuthStore();
   const {
     matchStatus, joinQueue, handleStop, handleNext,
-    localVideoRef, remoteVideoRef, mediaError
+    localVideoRef, remoteVideoRef, mediaError,
+    remotePeerId, previousPeerId
   } = useMatchmaking(token || undefined);
+  
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   const [isUpdating, setIsUpdating] = useState(false);
   const showOnExplore = profile?.showOnExplore ?? true;
@@ -21,8 +26,23 @@ export default function HomeTemplate() {
     setIsUpdating(true);
     const newValue = !showOnExplore;
     try {
-      await ProfileService.updateProfile({ showOnExplore: newValue });
-      setProfile({ ...profile, showOnExplore: newValue });
+      let exploreThumbnail = profile.exploreThumbnail;
+      
+      if (newValue && localVideoRef.current) {
+        try {
+          const blob = await captureVideoFrame(localVideoRef.current);
+          if (blob) {
+            const { uploadUrl, publicUrl } = await ProfileService.getUploadUrl('image/jpeg');
+            await ProfileService.uploadImageToS3(uploadUrl, blob);
+            exploreThumbnail = publicUrl;
+          }
+        } catch (captureErr) {
+          console.error('Failed to capture and upload explore thumbnail', captureErr);
+        }
+      }
+
+      await ProfileService.updateProfile({ showOnExplore: newValue, exploreThumbnail });
+      setProfile({ ...profile, showOnExplore: newValue, exploreThumbnail });
     } catch (err) {
       console.error('Failed to update explore setting', err);
     } finally {
@@ -33,6 +53,14 @@ export default function HomeTemplate() {
   return (
     <SidebarLayout>
       <div className="flex flex-col h-full min-h-[calc(100vh-6rem)] max-w-6xl mx-auto p-4 space-y-4">
+
+        <ReportModal 
+          isOpen={isReportModalOpen} 
+          onClose={() => setIsReportModalOpen(false)} 
+          currentMatchId={remotePeerId} 
+          previousMatchId={previousPeerId}
+          onReportCurrent={handleNext}
+        />
 
         {/* Main Video Area */}
         <div className="relative flex-1 bg-zinc-950 rounded-3xl overflow-hidden border border-white/5 shadow-2xl">
@@ -113,6 +141,13 @@ export default function HomeTemplate() {
               >
                 Start Matching
               </button>
+              <button
+                onClick={() => setIsReportModalOpen(true)}
+                disabled={!remotePeerId && !previousPeerId}
+                className={`px-6 py-5 font-bold rounded-2xl transition-all border ${(!remotePeerId && !previousPeerId) ? 'bg-zinc-900 border-zinc-800 text-zinc-600 opacity-50 cursor-not-allowed' : 'bg-zinc-800 hover:bg-rose-500/20 text-rose-500 border-rose-500/20 hover:border-rose-500/50 active:scale-95'}`}
+              >
+                ⚠ Report
+              </button>
             </>
           ) : (
             <>
@@ -127,6 +162,12 @@ export default function HomeTemplate() {
                 className="px-10 py-4 bg-white hover:bg-zinc-200 text-zinc-950 text-lg font-bold rounded-2xl transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)] active:scale-95 min-w-35"
               >
                 Next ➔
+              </button>
+              <button
+                onClick={() => setIsReportModalOpen(true)}
+                className="px-6 py-4 font-bold rounded-2xl transition-all border bg-zinc-800 hover:bg-rose-500/20 text-rose-500 border-rose-500/20 hover:border-rose-500/50 active:scale-95"
+              >
+                ⚠ Report
               </button>
             </>
           )}

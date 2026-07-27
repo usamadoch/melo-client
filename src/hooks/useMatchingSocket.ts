@@ -9,6 +9,7 @@ export function useMatchingSocket(token: string | undefined) {
   const socketRef = useRef<Socket | null>(null);
   const [matchStatus, setMatchStatus] = useState<MatchStatus>('idle');
   const [remotePeerId, setRemotePeerId] = useState<string | null>(null);
+  const [previousPeerId, setPreviousPeerId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -21,7 +22,10 @@ export function useMatchingSocket(token: string | undefined) {
     
     socket.on('disconnect', () => {
       setMatchStatus('idle');
-      setRemotePeerId(null);
+      setRemotePeerId((prev) => {
+        if (prev) setPreviousPeerId(prev);
+        return null;
+      });
     });
 
     socketRef.current = socket;
@@ -40,14 +44,20 @@ export function useMatchingSocket(token: string | undefined) {
   const leaveQueue = useCallback(() => {
     if (!socketRef.current) return;
     setMatchStatus('idle');
-    setRemotePeerId(null);
+    setRemotePeerId((prev) => {
+      if (prev) setPreviousPeerId(prev);
+      return null;
+    });
     socketRef.current.emit('leave_queue');
   }, []);
 
   const nextMatch = useCallback(() => {
     if (!socketRef.current) return;
     setMatchStatus('searching');
-    setRemotePeerId(null);
+    setRemotePeerId((prev) => {
+      if (prev) setPreviousPeerId(prev);
+      return null;
+    });
     socketRef.current.emit('next_match');
   }, []);
 
@@ -57,6 +67,8 @@ export function useMatchingSocket(token: string | undefined) {
     setMatchStatus,
     remotePeerId,
     setRemotePeerId,
+    previousPeerId,
+    setPreviousPeerId,
     joinQueue,
     leaveQueue,
     nextMatch
