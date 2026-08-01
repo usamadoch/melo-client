@@ -40,9 +40,10 @@ export function useMatchmaking(token: string | undefined) {
   useEffect(() => {
     if (!socket) return;
 
-    const handleMatchFound = async ({ remoteUserId, initiator }: { remoteUserId: string, initiator: boolean }) => {
+    const handleMatchFound = async ({ remoteUserId, initiator, roomId }: { remoteUserId: string, initiator: boolean, roomId: string }) => {
       setMatchStatus('matched');
       setRemotePeerId(remoteUserId);
+      socketHook.setCurrentRoomId(roomId);
 
       try {
         // This will reuse the already initialized stream, or try again if it failed on mount

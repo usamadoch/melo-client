@@ -1,24 +1,24 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { io, Socket } from 'socket.io-client';
 import SidebarLayout from '@/src/components/SidebarLayout';
 import { useAuthStore } from '@/src/store/authStore';
 import { useWebRTC } from '@/src/hooks/useWebRTC';
 import { ProfileService } from '@/src/services/profileService';
 import { useDirectCallSocket } from '@/src/hooks/useDirectCallSocket';
+import LiveFeedbackWidget from '@/src/components/LiveFeedbackWidget';
 
 export default function ChatTemplate({ conversationId }: { conversationId: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { token } = useAuthStore();
-  
+
   const remoteUserId = searchParams.get('remoteUserId');
   const initiator = searchParams.get('initiator') === 'true';
 
   const webrtc = useWebRTC();
-  const [remoteUser, setRemoteUser] = useState<{name: string, categories: string[], subcategories: string[]} | null>(null);
+  const [remoteUser, setRemoteUser] = useState<{ name: string, categories: string[], subcategories: string[] } | null>(null);
 
   useEffect(() => {
     if (!token || !remoteUserId) return;
@@ -73,6 +73,14 @@ export default function ChatTemplate({ conversationId }: { conversationId: strin
 
         {/* Main Video Area */}
         <div className="relative flex-1 bg-zinc-950 rounded-3xl overflow-hidden border border-white/5 shadow-2xl min-h-100">
+
+          {remoteUserId && (
+            <LiveFeedbackWidget
+              matchId={conversationId}
+              remotePeerId={remoteUserId}
+              source="EXPLORE"
+            />
+          )}
 
           {/* Remote Video (Full Size) */}
           <video

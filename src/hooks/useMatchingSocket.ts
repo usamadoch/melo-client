@@ -10,6 +10,7 @@ export function useMatchingSocket(token: string | undefined) {
   const [matchStatus, setMatchStatus] = useState<MatchStatus>('idle');
   const [remotePeerId, setRemotePeerId] = useState<string | null>(null);
   const [previousPeerId, setPreviousPeerId] = useState<string | null>(null);
+  const [currentRoomId, setCurrentRoomId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -26,6 +27,7 @@ export function useMatchingSocket(token: string | undefined) {
         if (prev) setPreviousPeerId(prev);
         return null;
       });
+      setCurrentRoomId(null);
     });
 
     socketRef.current = socket;
@@ -48,6 +50,7 @@ export function useMatchingSocket(token: string | undefined) {
       if (prev) setPreviousPeerId(prev);
       return null;
     });
+    setCurrentRoomId(null);
     socketRef.current.emit('leave_queue');
   }, []);
 
@@ -60,6 +63,7 @@ export function useMatchingSocket(token: string | undefined) {
       if (prev) setPreviousPeerId(prev);
       return null;
     });
+    setCurrentRoomId(null);
     socketRef.current.emit('next_match', { skippedUserId });
   }, [remotePeerId]);
 
@@ -71,6 +75,8 @@ export function useMatchingSocket(token: string | undefined) {
     setRemotePeerId,
     previousPeerId,
     setPreviousPeerId,
+    currentRoomId,
+    setCurrentRoomId,
     joinQueue,
     leaveQueue,
     nextMatch

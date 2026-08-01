@@ -7,13 +7,14 @@ import { useMatchmaking } from '@/src/hooks/useMatchmaking';
 import { ProfileService } from '@/src/services/profileService';
 import ReportModal from '@/src/components/ReportModal';
 import { captureVideoFrame } from '@/src/utils/mediaUtils';
+import LiveFeedbackWidget from '@/src/components/LiveFeedbackWidget';
 
 export default function HomeTemplate() {
   const { token, profile, setProfile } = useAuthStore();
   const {
     matchStatus, joinQueue, handleStop, handleNext,
     localVideoRef, remoteVideoRef, mediaError,
-    remotePeerId, previousPeerId
+    remotePeerId, previousPeerId, currentRoomId
   } = useMatchmaking(token || undefined);
   
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -64,6 +65,14 @@ export default function HomeTemplate() {
 
         {/* Main Video Area */}
         <div className="relative flex-1 bg-zinc-950 rounded-3xl overflow-hidden border border-white/5 shadow-2xl">
+
+          {matchStatus === 'matched' && currentRoomId && remotePeerId && (
+            <LiveFeedbackWidget 
+              matchId={currentRoomId} 
+              remotePeerId={remotePeerId} 
+              source="RANDOM" 
+            />
+          )}
 
           {/* Remote Video (Full Size) */}
           <video
