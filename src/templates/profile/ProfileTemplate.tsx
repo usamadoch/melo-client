@@ -38,29 +38,14 @@ export default function ProfileTemplate() {
             </div>
             <div className="flex-1">
               <h2 className="text-3xl font-bold text-white mb-1">{user?.name}</h2>
-              {isLoading ? (
-                <div className="h-6 w-48 bg-zinc-800/50 animate-pulse rounded-lg mt-1 mx-auto sm:mx-0" />
-              ) : (
-                <p className="text-indigo-400 text-lg font-medium">
-                  {profile?.conversationTitle || "No conversation title set."}
-                </p>
-              )}
+
               <p className="text-sm text-zinc-500 mt-1">{user?.email}</p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold text-zinc-300 mb-3">About Me</h3>
-                {isLoading ? (
-                  <div className="h-24 w-full bg-zinc-800/30 animate-pulse rounded-2xl border border-zinc-800/50" />
-                ) : (
-                  <p className="text-zinc-400 leading-relaxed bg-zinc-800/30 p-4 rounded-2xl border border-zinc-800/50 min-h-24">
-                    {profile?.bio || "No bio provided."}
-                  </p>
-                )}
-              </div>
+
               <div>
                 <h3 className="text-lg font-semibold text-zinc-300 mb-3">Interests</h3>
                 {isLoading ? (
@@ -71,15 +56,25 @@ export default function ProfileTemplate() {
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2">
-                    {profile?.interests && profile.interests.length > 0 ? (
-                      profile.interests.map((interest) => (
-                        <span
-                          key={interest}
-                          className="px-4 py-1.5 bg-indigo-500/10 text-indigo-300 rounded-full text-sm border border-indigo-500/20 font-medium"
-                        >
-                          {interest}
-                        </span>
-                      ))
+                    {profile?.categories && profile.categories.length > 0 ? (
+                      <>
+                        {profile.categories.map((cat) => (
+                          <span
+                            key={cat}
+                            className="px-4 py-1.5 bg-indigo-500/10 text-indigo-300 rounded-full text-sm border border-indigo-500/20 font-medium"
+                          >
+                            {cat}
+                          </span>
+                        ))}
+                        {profile.subcategories?.map((sub) => (
+                          <span
+                            key={sub}
+                            className="px-3 py-1 bg-emerald-500/10 text-emerald-300 rounded-full text-xs border border-emerald-500/20 font-medium"
+                          >
+                            {sub}
+                          </span>
+                        ))}
+                      </>
                     ) : (
                       <span className="text-zinc-500 text-sm">No interests listed.</span>
                     )}

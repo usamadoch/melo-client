@@ -53,13 +53,15 @@ export function useMatchingSocket(token: string | undefined) {
 
   const nextMatch = useCallback(() => {
     if (!socketRef.current) return;
+    // Capture the current peer before clearing so we can tell the server who was skipped
+    const skippedUserId = remotePeerId;
     setMatchStatus('searching');
     setRemotePeerId((prev) => {
       if (prev) setPreviousPeerId(prev);
       return null;
     });
-    socketRef.current.emit('next_match');
-  }, []);
+    socketRef.current.emit('next_match', { skippedUserId });
+  }, [remotePeerId]);
 
   return {
     socket: socketRef.current,

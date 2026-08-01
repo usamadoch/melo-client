@@ -3,15 +3,25 @@ import type { Profile } from '../store/authStore';
 
 export interface CreateProfilePayload {
   displayName: string;
-  interests: string[];
-  bio: string;
-  conversationTitle: string;
+  categories: string[];
+  subcategories: string[];
+  freeTextInterest: string;
+
   showOnExplore: boolean;
   allowRandomMatching: boolean;
 }
 
-export interface InterestsResponse {
-  interests: string[];
+export interface SubcategoryDef {
+  name: string;
+}
+
+export interface CategoryDef {
+  name: string;
+  subcategories: SubcategoryDef[];
+}
+
+export interface CategoriesResponse {
+  categories: CategoryDef[];
 }
 
 export interface ExploreDataResponse {
@@ -19,18 +29,19 @@ export interface ExploreDataResponse {
     id: string;
     name: string;
     avatar: string;
-    bio?: string;
-    conversationTitle?: string;
-    interests: string[];
+
+    categories: string[];
+    subcategories: string[];
+    freeTextInterest?: string;
     exploreThumbnail?: string;
   }>;
   categories: string[];
 }
 
 export class ProfileService {
-  static async getInterests(): Promise<string[]> {
-    const response = await api.get<InterestsResponse>('/interests');
-    return response.data.interests;
+  static async getCategories(): Promise<CategoryDef[]> {
+    const response = await api.get<CategoriesResponse>('/interests');
+    return response.data.categories;
   }
 
   static async createProfile(profileData: CreateProfilePayload): Promise<Profile> {
@@ -53,8 +64,8 @@ export class ProfileService {
     return response.data;
   }
 
-  static async getPublicProfile(userId: string): Promise<{name: string, bio: string, interests: string[]}> {
-    const response = await api.get<{name: string, bio: string, interests: string[]}>(`/profile/${userId}/public`);
+  static async getPublicProfile(userId: string): Promise<{name: string, categories: string[], subcategories: string[]}> {
+    const response = await api.get<{name: string, categories: string[], subcategories: string[]}>(`/profile/${userId}/public`);
     return response.data;
   }
 

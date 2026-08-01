@@ -12,9 +12,10 @@ export interface User {
 export interface Profile {
   _id: string;
   userId: string;
-  bio?: string;
-  conversationTitle?: string;
-  interests: string[];
+
+  categories: string[];
+  subcategories: string[];
+  freeTextInterest?: string;
   showOnExplore: boolean;
   exploreThumbnail?: string;
   allowRandomMatching: boolean;

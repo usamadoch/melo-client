@@ -18,7 +18,7 @@ export default function ChatTemplate({ conversationId }: { conversationId: strin
   const initiator = searchParams.get('initiator') === 'true';
 
   const webrtc = useWebRTC();
-  const [remoteUser, setRemoteUser] = useState<{name: string, bio: string, interests: string[]} | null>(null);
+  const [remoteUser, setRemoteUser] = useState<{name: string, categories: string[], subcategories: string[]} | null>(null);
 
   useEffect(() => {
     if (!token || !remoteUserId) return;
@@ -29,10 +29,10 @@ export default function ChatTemplate({ conversationId }: { conversationId: strin
         if (data) {
           setRemoteUser(data);
         } else {
-          setRemoteUser({ name: 'Unknown User', bio: '', interests: [] });
+          setRemoteUser({ name: 'Unknown User', categories: [], subcategories: [] });
         }
       } catch (err) {
-        setRemoteUser({ name: 'Unknown User', bio: '', interests: [] });
+        setRemoteUser({ name: 'Unknown User', categories: [], subcategories: [] });
       }
     };
     fetchRemoteProfile();
@@ -56,9 +56,9 @@ export default function ChatTemplate({ conversationId }: { conversationId: strin
         <div className="bg-zinc-900/60 border border-white/10 rounded-2xl p-5 backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold text-white mb-2">{remoteUser ? remoteUser.name : 'Connecting...'}</h1>
-            {remoteUser?.bio && <p className="text-zinc-400 text-sm mb-2">{remoteUser.bio}</p>}
+
             <div className="flex flex-wrap gap-2">
-              {remoteUser?.interests.map(topic => (
+              {[...(remoteUser?.categories || []), ...(remoteUser?.subcategories || [])].map(topic => (
                 <span key={topic} className="px-2 py-1 bg-black/40 text-zinc-300 text-xs font-semibold rounded-md border border-white/5 shadow-sm">
                   #{topic}
                 </span>

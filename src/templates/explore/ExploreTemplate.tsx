@@ -27,7 +27,7 @@ export default function ExploreTemplate() {
 
   const filteredUsers = activeCategory === 'All'
     ? exploreData.users
-    : exploreData.users.filter(user => user.interests.includes(activeCategory));
+    : exploreData.users.filter(user => user.categories.includes(activeCategory));
 
   const allCategories = ['All', ...exploreData.categories];
 
@@ -71,9 +71,8 @@ export default function ExploreTemplate() {
                 key={user.id}
                 id={user.id}
                 name={user.name}
-                bio={user.bio || 'No bio'}
-                conversationTitle={user.conversationTitle}
-                category={user.interests[0] || 'New'}
+
+                category={user.categories[0] || 'New'}
                 gradientClass={gradientClass}
                 exploreThumbnail={user.exploreThumbnail}
                 avatar={user.avatar}

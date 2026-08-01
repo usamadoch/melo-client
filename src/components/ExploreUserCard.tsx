@@ -7,15 +7,14 @@ import { useRequestsStore } from '../store/requestsStore';
 interface ExploreUserCardProps {
   id: string;
   name: string;
-  bio: string;
-  conversationTitle?: string;
+
   category: string;
   gradientClass: string;
   exploreThumbnail?: string;
   avatar?: string;
 }
 
-export default function ExploreUserCard({ id, name, bio, conversationTitle, category, gradientClass, exploreThumbnail, avatar }: ExploreUserCardProps) {
+export default function ExploreUserCard({ id, name, category, gradientClass, exploreThumbnail, avatar }: ExploreUserCardProps) {
   const { sendChatRequest } = useChatRequestsSocket();
   const outgoingRequests = useRequestsStore(state => state.outgoingRequests);
   const isSent = outgoingRequests.includes(id);
@@ -43,7 +42,7 @@ export default function ExploreUserCard({ id, name, bio, conversationTitle, cate
 
       {/* Content at the bottom */}
       <div className="absolute inset-x-0 bottom-0 p-4 flex flex-col gap-2">
-        <h3 className="text-white font-bold text-lg leading-tight line-clamp-3 shadow-sm">{conversationTitle || bio}</h3>
+
         <div className="flex items-center justify-between mt-1">
           <span className="text-white/90 text-sm font-medium">{name}</span>
           <span className="px-2 py-0.5 bg-black/40 text-white/80 text-xs font-semibold rounded-md backdrop-blur-md">
