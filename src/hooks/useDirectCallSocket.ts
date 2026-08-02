@@ -176,5 +176,5 @@ export function useDirectCallSocket({
     router.push('/explore');
   };
 
-  return { endCall };
+  return { endCall, socket: socketRef.current };
 }

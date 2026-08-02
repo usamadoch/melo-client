@@ -8,13 +8,14 @@ import { ProfileService } from '@/src/services/profileService';
 import ReportModal from '@/src/components/ReportModal';
 import { captureVideoFrame } from '@/src/utils/mediaUtils';
 import LiveFeedbackWidget from '@/src/components/LiveFeedbackWidget';
+import LiveChatPanel from '@/src/components/LiveChatPanel';
 
 export default function HomeTemplate() {
   const { token, profile, setProfile } = useAuthStore();
   const {
     matchStatus, joinQueue, handleStop, handleNext,
     localVideoRef, remoteVideoRef, mediaError,
-    remotePeerId, previousPeerId, currentRoomId
+    remotePeerId, previousPeerId, currentRoomId, socket
   } = useMatchmaking(token || undefined);
   
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -63,8 +64,9 @@ export default function HomeTemplate() {
           onReportCurrent={handleNext}
         />
 
-        {/* Main Video Area */}
-        <div className="relative flex-1 bg-zinc-950 rounded-3xl overflow-hidden border border-white/5 shadow-2xl">
+        <div className="flex flex-col lg:flex-row gap-4 flex-1 h-full min-h-0">
+          {/* Main Video Area */}
+          <div className="relative flex-1 bg-zinc-950 rounded-3xl overflow-hidden border border-white/5 shadow-2xl">
 
           {matchStatus === 'matched' && currentRoomId && remotePeerId && (
             <LiveFeedbackWidget 
@@ -124,6 +126,18 @@ export default function HomeTemplate() {
             </div>
           )}
         </div>
+        
+        {/* Chat Panel - Only visible when matched */}
+        {matchStatus === 'matched' && currentRoomId && remotePeerId && (
+          <div className="w-full lg:w-80 h-64 lg:h-auto shrink-0">
+            <LiveChatPanel 
+              socket={socket} 
+              matchId={currentRoomId} 
+              remoteUserId={remotePeerId} 
+            />
+          </div>
+        )}
+      </div>
 
         {/* Control Bar */}
         <div className="flex items-center justify-center gap-6 bg-zinc-900/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md shrink-0">

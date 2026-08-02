@@ -8,6 +8,7 @@ import { useWebRTC } from '@/src/hooks/useWebRTC';
 import { ProfileService } from '@/src/services/profileService';
 import { useDirectCallSocket } from '@/src/hooks/useDirectCallSocket';
 import LiveFeedbackWidget from '@/src/components/LiveFeedbackWidget';
+import LiveChatPanel from '@/src/components/LiveChatPanel';
 
 export default function ChatTemplate({ conversationId }: { conversationId: string }) {
   const router = useRouter();
@@ -38,7 +39,7 @@ export default function ChatTemplate({ conversationId }: { conversationId: strin
     fetchRemoteProfile();
   }, [token, remoteUserId]);
 
-  const { endCall } = useDirectCallSocket({
+  const { endCall, socket } = useDirectCallSocket({
     token,
     remoteUserId,
     initiator,
@@ -71,8 +72,9 @@ export default function ChatTemplate({ conversationId }: { conversationId: strin
           </div>
         </div>
 
-        {/* Main Video Area */}
-        <div className="relative flex-1 bg-zinc-950 rounded-3xl overflow-hidden border border-white/5 shadow-2xl min-h-100">
+        <div className="flex flex-col lg:flex-row gap-4 flex-1 h-full min-h-0">
+          {/* Main Video Area */}
+          <div className="relative flex-1 bg-zinc-950 rounded-3xl overflow-hidden border border-white/5 shadow-2xl min-h-100">
 
           {remoteUserId && (
             <LiveFeedbackWidget
@@ -100,6 +102,18 @@ export default function ChatTemplate({ conversationId }: { conversationId: strin
               className="w-full h-full object-cover transform -scale-x-100" // Mirror local video
             />
           </div>
+        </div>
+
+          {/* Chat Panel */}
+          {remoteUserId && (
+            <div className="w-full lg:w-80 h-64 lg:h-auto shrink-0">
+              <LiveChatPanel 
+                socket={socket} 
+                matchId={conversationId} 
+                remoteUserId={remoteUserId} 
+              />
+            </div>
+          )}
         </div>
 
         {/* Control Bar */}
